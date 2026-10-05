@@ -1,13 +1,4 @@
-"""
-Módulo de exportação — CSV e JSON
-===================================
-Salva os livros coletados em arquivos, sem precisar de banco de dados.
-
-Conceitos que você vai aprender:
-- dataclasses.asdict: converte uma dataclass em dicionário
-- csv.DictWriter e json.dump
-- Estatísticas simples com o módulo statistics
-"""
+"""Salva os livros em CSV/JSON e mostra o resumo quando não tem banco."""
 
 import csv
 import json
@@ -20,7 +11,6 @@ from src.scraper import Livro
 
 
 def remover_duplicados(livros: list[Livro]) -> list[Livro]:
-    """Mantém só a primeira ocorrência de cada URL (a URL identifica o livro)."""
     vistos = set()
     unicos = []
     for livro in livros:
@@ -46,7 +36,6 @@ def exportar_json(livros: list[Livro], caminho: str) -> None:
 
 
 def imprimir_relatorio(livros: list[Livro]) -> None:
-    """Mesmo relatório do modo com banco, calculado em Python."""
     print(f"\n{'='*50}")
     print("  RELATÓRIO DO ACERVO COLETADO")
     print(f"{'='*50}")
@@ -73,8 +62,8 @@ def imprimir_relatorio(livros: list[Livro]) -> None:
 
     melhores = sorted((l for l in livros if l.avaliacao == 5), key=lambda l: l.preco)[:5]
     if melhores:
-        print("\n  TOP 5 — Melhor avaliados e mais baratos:")
+        print("\n  Top 5 com 5 estrelas e mais baratos:")
         for i, l in enumerate(melhores, 1):
-            print(f"  {i}. {'★'*l.avaliacao} £{l.preco:.2f} — {l.titulo[:40]}")
+            print(f"  {i}. {'★'*l.avaliacao} £{l.preco:.2f} - {l.titulo[:40]}")
 
     print(f"\n{'='*50}")

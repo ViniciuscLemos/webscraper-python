@@ -1,100 +1,57 @@
-# Web Scraper de Livros — Python + PostgreSQL
+# Web Scraper de Livros
 
 ![Testes](https://github.com/ViniciuscLemos/webscraper-python/actions/workflows/testes.yml/badge.svg)
 
-Coleta dados de livros do site [books.toscrape.com](https://books.toscrape.com) (site público feito para praticar scraping), salva em PostgreSQL — ou em CSV/JSON, sem precisar de banco — e gera relatórios com estatísticas.
+Scraper em Python que coleta livros do [books.toscrape.com](https://books.toscrape.com), um site feito justamente pra treinar scraping. Ele pega título, preço, avaliação, disponibilidade e categoria, salva os dados e mostra um resumo no final.
 
-## Tecnologias
-- **Python 3.10+** — linguagem principal
-- **requests** — requisições HTTP (com sessão e retry automático)
-- **BeautifulSoup4** — parsing de HTML
-- **psycopg2** — driver PostgreSQL para Python
-- **python-dotenv** — gerenciamento de variáveis de ambiente
-- **unittest** + **unittest.mock** — testes sem acessar a internet
+Usei requests e BeautifulSoup. Os dados podem ir pra um PostgreSQL ou só pra um arquivo CSV/JSON.
 
-## O que você vai aprender com este projeto
-- Web scraping com requests + BeautifulSoup
-- Navegação no DOM HTML: `find()`, `find_all()`, classes CSS
-- Paginação automática e resolução de links relativos com `urljoin`
-- Rate limiting (delay entre requisições — boa prática)
-- Retry com backoff exponencial para falhas temporárias (429/5xx)
-- PostgreSQL com psycopg2: conexão, queries, transações
-- Upsert: `ON CONFLICT DO UPDATE` — inserir ou atualizar
-- `execute_values()`: inserção em lote (muito mais eficiente que loop)
-- Dataclasses em Python, exportação para CSV/JSON
-- Testes com HTML de exemplo e `mock.patch`
+## Rodando
 
-## Pré-requisitos
-- Python 3.10+
-- Conexão com a internet (para acessar books.toscrape.com)
-- PostgreSQL instalado e rodando — **opcional**, veja o modo `--sem-banco`
-
-## Como rodar
-
-### 1. Instale as dependências
 ```bash
 python -m venv .venv
-# Windows: .venv\Scripts\activate   |   Linux/macOS: source .venv/bin/activate
+.venv\Scripts\activate        # no Linux/Mac: source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2a. Rodar sem banco (mais rápido para testar)
+Sem banco de dados, salvando em CSV:
+
 ```bash
-python main.py --sem-banco                       # salva em output/livros.csv
-python main.py --sem-banco --json output/livros.json
+python main.py --sem-banco
 ```
 
-### 2b. Rodar com PostgreSQL
+Com PostgreSQL:
+
 ```bash
 psql -U postgres -c "CREATE DATABASE scraper_db;"
-cp .env.example .env      # edite com suas credenciais
+cp .env.example .env    # coloca a senha do seu Postgres
 python main.py
 ```
 
-O programa vai:
-1. Conectar ao banco e criar as tabelas (ou pular, no modo sem banco)
-2. Coletar as categorias disponíveis no site
-3. Raspar livros de cada categoria (com delay entre páginas)
-4. Salvar no PostgreSQL com upsert e/ou exportar para CSV/JSON
-5. Exibir relatório com estatísticas
+Algumas opções:
 
-### Opções
+```bash
+python main.py --sem-banco --categorias 2 --paginas 1
+python main.py --sem-banco --json output/livros.json
+```
 
-| Opção | Padrão | O que faz |
-|-------|--------|-----------|
-| `--categorias N` | 4 | Quantas categorias coletar |
-| `--paginas N` | 3 | Máximo de páginas por categoria |
-| `--delay S` | 0.8 | Segundos entre uma página e outra |
-| `--sem-banco` | — | Não usa PostgreSQL |
-| `--csv ARQUIVO` | — | Exporta os livros para CSV |
-| `--json ARQUIVO` | — | Exporta os livros para JSON |
-
-## O que é coletado por livro
-- Título
-- Preço (em libras £)
-- Avaliação (1 a 5 estrelas)
-- Disponibilidade (em estoque ou não)
-- Categoria
-- URL da página do livro
+Por padrão ele espera 0.8s entre uma página e outra pra não sobrecarregar o site (dá pra mudar com `--delay`). Se uma requisição falhar, ele tenta de novo algumas vezes antes de desistir.
 
 ## Testes
+
 ```bash
-python -m unittest discover -s tests -v
-```
-Os testes usam HTML de exemplo com a mesma estrutura do site, então rodam offline e em milissegundos. Rodam também no GitHub Actions a cada push.
-
-## Estrutura do projeto
-```
-main.py                 # Orquestração do fluxo e argumentos de linha de comando
-src/
-├── scraper.py          # Coleta de dados (HTTP + BeautifulSoup)
-├── banco.py            # Persistência no PostgreSQL
-└── exportar.py         # Exportação CSV/JSON e relatório sem banco
-tests/
-└── test_scraper.py     # Testes offline do parser, paginação e exportação
-requirements.txt        # Dependências do projeto
-.env.example            # Modelo de configuração
+python -m unittest discover -s tests
 ```
 
-## Nota ética sobre web scraping
-Este projeto usa books.toscrape.com, um site criado especificamente para praticar scraping. Para raspar outros sites, sempre verifique o arquivo `robots.txt` e os Termos de Serviço do site.
+Os testes usam um HTML salvo no próprio teste, então não acessam a internet.
+
+## Arquivos
+
+```
+main.py             fluxo principal e opções de linha de comando
+src/scraper.py      requisições e leitura do HTML
+src/banco.py        parte do PostgreSQL
+src/exportar.py     CSV, JSON e o resumo
+```
+
+Se for usar a ideia em outro site, dá uma olhada no `robots.txt` e nos termos de uso dele antes.

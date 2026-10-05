@@ -1,11 +1,4 @@
-"""
-Web Scraper de Livros — Python + PostgreSQL
-=============================================
-Coleta dados de livros do site books.toscrape.com,
-salva em um banco PostgreSQL (ou em CSV/JSON) e gera relatório.
-
-Execute: python main.py --help
-"""
+"""Coleta livros do books.toscrape.com e salva no Postgres ou em CSV/JSON."""
 
 import argparse
 import sys
@@ -44,14 +37,13 @@ def main(argv=None) -> int:
     print("  Fonte: books.toscrape.com")
     print("=" * 50)
 
-    # Passo 1: Conecta ao banco (opcional)
     conn = None
     if args.sem_banco:
         print("\n[1/4] Modo sem banco: os dados serão salvos só em arquivo.")
     else:
         print("\n[1/4] Conectando ao banco de dados...")
         try:
-            # Import aqui dentro: quem usa --sem-banco não precisa do psycopg2
+            # importado aqui pra quem usa --sem-banco não precisar do psycopg2
             from src.banco import conectar, criar_tabelas
             conn = conectar()
             criar_tabelas(conn)
@@ -64,7 +56,6 @@ def main(argv=None) -> int:
             return 1
 
     try:
-        # Passo 2: Obtém categorias disponíveis
         print("\n[2/4] Obtendo categorias do site...")
         categorias = obter_categorias(max_categorias=args.categorias)
 
@@ -77,7 +68,6 @@ def main(argv=None) -> int:
         for nome, _ in categorias:
             print(f"        - {nome}")
 
-        # Passo 3: Raspa cada categoria
         print("\n[3/4] Coletando livros...")
         todos_livros = []
         for nome, url in categorias:
@@ -90,7 +80,6 @@ def main(argv=None) -> int:
 
         print(f"\n  Total coletado: {len(todos_livros)} livros")
 
-        # Passo 4: Salva e gera relatório
         print("\n[4/4] Salvando os dados...")
         from src.exportar import exportar_csv, exportar_json, imprimir_relatorio, remover_duplicados
         todos_livros = remover_duplicados(todos_livros)
