@@ -70,11 +70,14 @@ def inserir_livros(conn: psycopg2.extensions.connection, livros: list[Livro]) ->
     if not livros:
         return 0
 
-    # Prepara os dados como lista de tuplas
-    dados = [
-        (l.titulo, l.preco, l.avaliacao, l.disponivel, l.categoria, l.url)
+    # Prepara os dados como lista de tuplas.
+    # Um mesmo INSERT não pode ter a mesma URL duas vezes (o ON CONFLICT
+    # falharia), então usamos um dicionário para manter só uma por URL.
+    # avaliacao 0 (desconhecida) vira NULL para respeitar o CHECK da tabela.
+    dados = list({
+        l.url: (l.titulo, l.preco, l.avaliacao or None, l.disponivel, l.categoria, l.url)
         for l in livros
-    ]
+    }.values())
 
     with conn.cursor() as cur:
         execute_values(cur, """
@@ -88,7 +91,7 @@ def inserir_livros(conn: psycopg2.extensions.connection, livros: list[Livro]) ->
         """, dados)
 
     conn.commit()
-    return len(livros)
+    return len(dados)
 
 
 def gerar_relatorio(conn: psycopg2.extensions.connection) -> None:
@@ -99,8 +102,15 @@ def gerar_relatorio(conn: psycopg2.extensions.connection) -> None:
         cur.execute("SELECT COUNT(*), AVG(preco), MIN(preco), MAX(preco) FROM livros")
         total, media, minimo, maximo = cur.fetchone()
         print(f"\n{'='*50}")
-        print(f"  RELATÓRIO DO ACERVO COLETADO")
+        print("  RELATÓRIO DO ACERVO COLETADO")
         print(f"{'='*50}")
+
+        # Com a tabela vazia, AVG/MIN/MAX retornam NULL (None no Python)
+        if total == 0:
+            print("  Nenhum livro no banco.")
+            print(f"{'='*50}")
+            return
+
         print(f"  Total de livros: {total}")
         print(f"  Preço médio:     £{float(media):.2f}")
         print(f"  Mais barato:     £{float(minimo):.2f}")
@@ -113,10 +123,10 @@ def gerar_relatorio(conn: psycopg2.extensions.connection) -> None:
             GROUP BY categoria
             ORDER BY qtd DESC
         """)
-        print(f"\n{'Categoria':<25} {'Livros':>8} {'Preço Médio':>12}")
-        print(f"  {'-'*48}")
+        print(f"\n  {'Categoria':<23} {'Livros':>8} {'Preço Médio':>12}")
+        print(f"  {'-'*45}")
         for row in cur.fetchall():
-            print(f"  {row[0]:<23} {row[1]:>8} £{float(row[2]):>10.2f}")
+            print(f"  {row[0]:<23} {row[1]:>8} {f'£{float(row[2]):.2f}':>12}")
 
         # Top 5 mais bem avaliados e mais baratos
         cur.execute("""
