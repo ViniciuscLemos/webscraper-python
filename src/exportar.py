@@ -22,7 +22,8 @@ def remover_duplicados(livros: list[Livro]) -> list[Livro]:
 
 def exportar_csv(livros: list[Livro], caminho: str) -> None:
     os.makedirs(os.path.dirname(os.path.abspath(caminho)), exist_ok=True)
-    with open(caminho, "w", newline="", encoding="utf-8") as f:
+    # utf-8-sig coloca o BOM, senão o Excel mostra o £ quebrado
+    with open(caminho, "w", newline="", encoding="utf-8-sig") as f:
         escritor = csv.DictWriter(f, fieldnames=[c.name for c in fields(Livro)])
         escritor.writeheader()
         for livro in livros:

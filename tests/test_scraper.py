@@ -147,7 +147,9 @@ class TestExportacao(unittest.TestCase):
     def test_csv(self):
         caminho = os.path.join(self.pasta.name, "sub", "livros.csv")
         exportar_csv(self.livros[:2], caminho)
-        with open(caminho, encoding="utf-8") as f:
+        with open(caminho, "rb") as f:
+            self.assertTrue(f.read().startswith(b"\xef\xbb\xbf"))  # BOM pro Excel
+        with open(caminho, encoding="utf-8-sig") as f:
             linhas = list(csv.DictReader(f))
         self.assertEqual(linhas[1]["titulo"], "B")
         self.assertEqual(linhas[1]["disponivel"], "False")
