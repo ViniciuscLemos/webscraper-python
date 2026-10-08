@@ -129,20 +129,28 @@ def raspar_categoria(url_categoria: str, nome_categoria: str,
     return todos_livros
 
 
-def obter_categorias(max_categorias: int = 5) -> list[tuple[str, str]]:
+def obter_categorias(max_categorias: int = 5, nomes: Optional[list[str]] = None) -> list[tuple[str, str]]:
     soup = obter_pagina(BASE_URL)
     if soup is None:
         return []
-    return extrair_categorias(soup, max_categorias)
+    return extrair_categorias(soup, max_categorias, nomes)
 
 
-def extrair_categorias(soup: BeautifulSoup, max_categorias: int = 5) -> list[tuple[str, str]]:
-    """Lê o menu lateral e devolve [(nome, url), ...]."""
+def extrair_categorias(soup: BeautifulSoup, max_categorias: int = 5,
+                       nomes: Optional[list[str]] = None) -> list[tuple[str, str]]:
+    """Lê o menu lateral e devolve [(nome, url), ...].
+
+    Com `nomes`, devolve só essas categorias (sem diferenciar maiúscula), na ordem pedida.
+    Sem `nomes`, devolve as `max_categorias` primeiras.
+    """
     nav = soup.find("ul", class_="nav-list")
     if not nav:
         return []
 
-    categorias = []
-    for link in nav.find_all("a")[1:max_categorias + 1]:  # o primeiro é "Books", que tem tudo
-        categorias.append((link.text.strip(), urljoin(BASE_URL, link["href"])))
-    return categorias
+    # o primeiro link é "Books", que tem tudo
+    todas = [(link.text.strip(), urljoin(BASE_URL, link["href"])) for link in nav.find_all("a")[1:]]
+    if not nomes:
+        return todas[:max_categorias]
+
+    por_nome = {nome.lower(): (nome, url) for nome, url in todas}
+    return [por_nome[n.strip().lower()] for n in nomes if n.strip().lower() in por_nome]

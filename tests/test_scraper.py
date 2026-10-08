@@ -85,6 +85,18 @@ class TestExtracao(unittest.TestCase):
         ])
 
 
+    def test_escolhe_categorias_pelo_nome(self):
+        soup = BeautifulSoup("""
+            <ul class="nav nav-list"><li><a href="catalogue/category/books_1/index.html">Books</a>
+              <ul>
+                <li><a href="catalogue/category/books/travel_2/index.html"> Travel </a></li>
+                <li><a href="catalogue/category/books/mystery_3/index.html"> Mystery </a></li>
+                <li><a href="catalogue/category/books/poetry_23/index.html"> Poetry </a></li>
+              </ul></li></ul>""", "html.parser")
+        categorias = scraper.extrair_categorias(soup, nomes=["poetry", "Não Existe", "MYSTERY"])
+        self.assertEqual([nome for nome, _ in categorias], ["Poetry", "Mystery"])
+
+
 class TestPaginacao(unittest.TestCase):
     def setUp(self):
         self.paginas = {

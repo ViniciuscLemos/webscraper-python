@@ -10,6 +10,8 @@ def ler_argumentos(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Coleta livros de books.toscrape.com.")
     parser.add_argument("--categorias", type=int, default=4,
                         help="quantas categorias coletar (padrão: 4)")
+    parser.add_argument("--categoria", action="append", metavar="NOME",
+                        help="coleta só essa categoria (pode repetir, ex: --categoria Mystery --categoria Poetry)")
     parser.add_argument("--paginas", type=int, default=3,
                         help="máximo de páginas por categoria (padrão: 3)")
     parser.add_argument("--delay", type=float, default=0.8,
@@ -62,14 +64,20 @@ def main(argv=None) -> int:
 
     try:
         print("\n[2/4] Obtendo categorias do site...")
-        categorias = obter_categorias(max_categorias=args.categorias)
+        categorias = obter_categorias(max_categorias=args.categorias, nomes=args.categoria)
+
+        if args.categoria:
+            achadas = {nome.lower() for nome, _ in categorias}
+            faltando = [n for n in args.categoria if n.strip().lower() not in achadas]
+            if faltando:
+                print(f"      Não achei no site: {', '.join(faltando)}")
 
         if not categorias:
-            print("      Erro: não foi possível obter as categorias.")
-            print("      Verifique sua conexão com a internet.")
+            print("      Erro: nenhuma categoria pra coletar.")
+            print("      Verifique sua conexão com a internet ou o nome das categorias.")
             return 1
 
-        print(f"      {len(categorias)} categorias encontradas:")
+        print(f"      {len(categorias)} categoria(s):")
         for nome, _ in categorias:
             print(f"        - {nome}")
 
