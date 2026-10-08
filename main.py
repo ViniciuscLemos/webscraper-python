@@ -30,6 +30,11 @@ def ler_argumentos(argv=None) -> argparse.Namespace:
 
 
 def main(argv=None) -> int:
+    # No Windows, com a saída redirecionada pra arquivo (python main.py > log.txt),
+    # o Python usa cp1252 e quebra no ★ e no £ do relatório
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
     args = ler_argumentos(argv)
 
     print("=" * 50)
