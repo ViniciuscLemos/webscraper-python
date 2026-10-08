@@ -32,10 +32,43 @@ Algumas opções:
 
 ```bash
 python main.py --sem-banco --categorias 2 --paginas 1
+python main.py --sem-banco --categoria Poetry --categoria Travel
 python main.py --sem-banco --json output/livros.json
 ```
 
+O `--categoria` usa o nome que aparece no menu do site (não precisa ligar pra maiúscula) e pode repetir. Sem ele, o scraper pega as primeiras categorias do menu.
+
+O CSV sai com BOM, então dá pra abrir direto no Excel sem o £ virar caractere estranho.
+
 Por padrão ele espera 0.8s entre uma página e outra pra não sobrecarregar o site (dá pra mudar com `--delay`). Se uma requisição falhar, ele tenta de novo algumas vezes antes de desistir.
+
+## Exemplo de saída
+
+Rodando `python main.py --sem-banco --categoria Poetry --categoria Travel --paginas 1`, o relatório do final fica assim:
+
+```
+==================================================
+  RELATÓRIO DO ACERVO COLETADO
+==================================================
+  Total de livros: 30
+  Preço médio:     £37.38
+  Mais barato:     £14.19
+  Mais caro:       £57.31
+
+  Categoria                 Livros  Preço Médio
+  ---------------------------------------------
+  Poetry                        19       £35.97
+  Travel                        11       £39.79
+
+  Top 5 com 5 estrelas e mais baratos:
+  1. ★★★★★ £15.42 - The Collected Poems of W.B. Yeats (The C
+  2. ★★★★★ £17.49 - Booked
+  3. ★★★★★ £26.08 - 1,000 Places to See Before You Die
+  4. ★★★★★ £29.04 - Les Fleurs du Mal
+  5. ★★★★★ £50.89 - Quarter Life Poetry: Poems for the Young
+
+==================================================
+```
 
 ## Testes
 
