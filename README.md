@@ -44,31 +44,9 @@ By default it waits 0.8s between pages so it doesn't overload the site (you can 
 
 ## Sample output
 
-Running `python main.py --no-db --category Poetry --category Travel --pages 1`, the report at the end looks like this:
+Running `python main.py --no-db --category Poetry --category Travel --pages 1`:
 
-```
-==================================================
-  REPORT OF THE SCRAPED BOOKS
-==================================================
-  Total books:     30
-  Average price:   £37.38
-  Cheapest:        £14.19
-  Most expensive:  £57.31
-
-  Category                   Books    Avg Price
-  ---------------------------------------------
-  Poetry                        19       £35.97
-  Travel                        11       £39.79
-
-  Top 5 cheapest with 5 stars:
-  1. ★★★★★ £15.42 - The Collected Poems of W.B. Yeats (The C
-  2. ★★★★★ £17.49 - Booked
-  3. ★★★★★ £26.08 - 1,000 Places to See Before You Die
-  4. ★★★★★ £29.04 - Les Fleurs du Mal
-  5. ★★★★★ £50.89 - Quarter Life Poetry: Poems for the Young
-
-==================================================
-```
+![The scraper running in the terminal, with the report at the end](docs/screenshot.png)
 
 ## Tests
 

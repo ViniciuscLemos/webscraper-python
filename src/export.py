@@ -10,6 +10,11 @@ from statistics import mean
 from src.scraper import Book
 
 
+def shorten(text: str, size: int = 40) -> str:
+    """Cuts long titles for the report, with … so it's clear something was cut."""
+    return text if len(text) <= size else text[:size - 1].rstrip() + "…"
+
+
 def remove_duplicates(books: list[Book]) -> list[Book]:
     seen = set()
     unique = []
@@ -65,6 +70,6 @@ def print_report(books: list[Book]) -> None:
     if best:
         print("\n  Top 5 cheapest with 5 stars:")
         for i, b in enumerate(best, 1):
-            print(f"  {i}. {'★'*b.rating} £{b.price:.2f} - {b.title[:40]}")
+            print(f"  {i}. {'★'*b.rating} £{b.price:.2f} - {shorten(b.title)}")
 
     print(f"\n{'='*50}")

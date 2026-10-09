@@ -4,6 +4,7 @@ import os
 import psycopg2
 from psycopg2.extras import execute_values
 from dotenv import load_dotenv
+from src.export import shorten
 from src.scraper import Book
 
 load_dotenv()
@@ -105,6 +106,6 @@ def generate_report(conn: psycopg2.extensions.connection) -> None:
         """)
         print("\n  Top 5 cheapest with 5 stars:")
         for i, row in enumerate(cur.fetchall(), 1):
-            print(f"  {i}. {'★'*row[1]} £{row[2]:.2f} - {row[0][:40]}")
+            print(f"  {i}. {'★'*row[1]} £{row[2]:.2f} - {shorten(row[0])}")
 
         print(f"\n{'='*50}")

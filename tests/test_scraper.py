@@ -18,7 +18,7 @@ from bs4 import BeautifulSoup
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src import scraper  # noqa: E402
-from src.export import export_csv, export_json, print_report, remove_duplicates  # noqa: E402
+from src.export import export_csv, export_json, print_report, remove_duplicates, shorten  # noqa: E402
 from src.scraper import Book  # noqa: E402
 
 
@@ -169,6 +169,12 @@ class TestExport(unittest.TestCase):
         self.assertIn("Total books:     2", text)
         self.assertIn("Average price:   £15.00", text)
         self.assertIn("No books scraped", text)
+
+    def test_shorten(self):
+        self.assertEqual(shorten("Booked"), "Booked")
+        long_title = "The Collected Poems of W.B. Yeats (The Collected Works)"
+        self.assertLessEqual(len(shorten(long_title)), 40)
+        self.assertTrue(shorten(long_title).endswith("…"))
 
 
 if __name__ == "__main__":
