@@ -1,6 +1,6 @@
 """
-Testes do scraper que não acessam a internet: usam HTML de exemplo
-com a mesma estrutura do books.toscrape.com.
+Scraper tests that don't hit the internet: they use sample HTML
+with the same structure as books.toscrape.com.
 """
 
 import csv
@@ -18,74 +18,74 @@ from bs4 import BeautifulSoup
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src import scraper  # noqa: E402
-from src.exportar import exportar_csv, exportar_json, imprimir_relatorio, remover_duplicados  # noqa: E402
-from src.scraper import Livro  # noqa: E402
+from src.export import export_csv, export_json, print_report, remove_duplicates  # noqa: E402
+from src.scraper import Book  # noqa: E402
 
 
-def artigo(titulo, href, preco, estrelas, estoque="In stock"):
+def article(title, href, price, stars, stock="In stock"):
     return f"""
     <article class="product_pod">
-      <p class="star-rating {estrelas}"></p>
-      <h3><a href="{href}" title="{titulo}">{titulo[:10]}...</a></h3>
+      <p class="star-rating {stars}"></p>
+      <h3><a href="{href}" title="{title}">{title[:10]}...</a></h3>
       <div class="product_price">
-        <p class="price_color">£{preco}</p>
-        <p class="instock availability">{estoque}</p>
+        <p class="price_color">£{price}</p>
+        <p class="instock availability">{stock}</p>
       </div>
     </article>"""
 
 
-def pagina(artigos, proxima=None):
-    nav = f'<li class="next"><a href="{proxima}">next</a></li>' if proxima else ""
-    return BeautifulSoup(f"<html><body>{''.join(artigos)}<ul class='pager'>{nav}</ul></body></html>",
+def page(articles, next_page=None):
+    nav = f'<li class="next"><a href="{next_page}">next</a></li>' if next_page else ""
+    return BeautifulSoup(f"<html><body>{''.join(articles)}<ul class='pager'>{nav}</ul></body></html>",
                          "html.parser")
 
 
-URL_CATEGORIA = "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"
+CATEGORY_URL = "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"
 
 
-class TestExtracao(unittest.TestCase):
-    def test_extrai_campos(self):
-        soup = pagina([artigo("A Light in the Attic", "../../../a-light-in-the-attic_1000/index.html",
-                              "51.77", "Three")])
-        livros = scraper.extrair_livros_da_pagina(soup, "Poetry", URL_CATEGORIA)
-        self.assertEqual(len(livros), 1)
-        livro = livros[0]
-        self.assertEqual(livro.titulo, "A Light in the Attic")
-        self.assertEqual(livro.preco, 51.77)
-        self.assertEqual(livro.avaliacao, 3)
-        self.assertTrue(livro.disponivel)
-        self.assertEqual(livro.categoria, "Poetry")
-        # urljoin resolve os "../" a partir da página atual
-        self.assertEqual(livro.url, "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html")
+class TestExtraction(unittest.TestCase):
+    def test_extracts_fields(self):
+        soup = page([article("A Light in the Attic", "../../../a-light-in-the-attic_1000/index.html",
+                             "51.77", "Three")])
+        books = scraper.extract_books_from_page(soup, "Poetry", CATEGORY_URL)
+        self.assertEqual(len(books), 1)
+        book = books[0]
+        self.assertEqual(book.title, "A Light in the Attic")
+        self.assertEqual(book.price, 51.77)
+        self.assertEqual(book.rating, 3)
+        self.assertTrue(book.available)
+        self.assertEqual(book.category, "Poetry")
+        # urljoin resolves the "../" from the current page
+        self.assertEqual(book.url, "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html")
 
-    def test_fora_de_estoque_e_estrela_desconhecida(self):
-        soup = pagina([artigo("X", "x/index.html", "10.00", "Zero", estoque="Out of stock")])
-        livro = scraper.extrair_livros_da_pagina(soup, "C", URL_CATEGORIA)[0]
-        self.assertFalse(livro.disponivel)
-        self.assertEqual(livro.avaliacao, 0)
+    def test_out_of_stock_and_unknown_rating(self):
+        soup = page([article("X", "x/index.html", "10.00", "Zero", stock="Out of stock")])
+        book = scraper.extract_books_from_page(soup, "C", CATEGORY_URL)[0]
+        self.assertFalse(book.available)
+        self.assertEqual(book.rating, 0)
 
-    def test_ignora_livro_malformado(self):
-        quebrado = '<article class="product_pod"><h3></h3></article>'
-        soup = pagina([quebrado, artigo("Ok", "ok/index.html", "1.00", "One")])
+    def test_skips_malformed_book(self):
+        broken = '<article class="product_pod"><h3></h3></article>'
+        soup = page([broken, article("Ok", "ok/index.html", "1.00", "One")])
         with redirect_stdout(StringIO()):
-            livros = scraper.extrair_livros_da_pagina(soup, "C", URL_CATEGORIA)
-        self.assertEqual([l.titulo for l in livros], ["Ok"])
+            books = scraper.extract_books_from_page(soup, "C", CATEGORY_URL)
+        self.assertEqual([b.title for b in books], ["Ok"])
 
-    def test_extrai_categorias(self):
+    def test_extracts_categories(self):
         soup = BeautifulSoup("""
             <ul class="nav nav-list"><li><a href="catalogue/category/books_1/index.html">Books</a>
               <ul>
                 <li><a href="catalogue/category/books/travel_2/index.html"> Travel </a></li>
                 <li><a href="catalogue/category/books/mystery_3/index.html"> Mystery </a></li>
               </ul></li></ul>""", "html.parser")
-        categorias = scraper.extrair_categorias(soup, max_categorias=5)
-        self.assertEqual(categorias, [
+        categories = scraper.extract_categories(soup, max_categories=5)
+        self.assertEqual(categories, [
             ("Travel", "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"),
             ("Mystery", "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"),
         ])
 
 
-    def test_escolhe_categorias_pelo_nome(self):
+    def test_picks_categories_by_name(self):
         soup = BeautifulSoup("""
             <ul class="nav nav-list"><li><a href="catalogue/category/books_1/index.html">Books</a>
               <ul>
@@ -93,82 +93,82 @@ class TestExtracao(unittest.TestCase):
                 <li><a href="catalogue/category/books/mystery_3/index.html"> Mystery </a></li>
                 <li><a href="catalogue/category/books/poetry_23/index.html"> Poetry </a></li>
               </ul></li></ul>""", "html.parser")
-        categorias = scraper.extrair_categorias(soup, nomes=["poetry", "Não Existe", "MYSTERY"])
-        self.assertEqual([nome for nome, _ in categorias], ["Poetry", "Mystery"])
+        categories = scraper.extract_categories(soup, names=["poetry", "Does Not Exist", "MYSTERY"])
+        self.assertEqual([name for name, _ in categories], ["Poetry", "Mystery"])
 
 
-class TestPaginacao(unittest.TestCase):
+class TestPagination(unittest.TestCase):
     def setUp(self):
-        self.paginas = {
-            URL_CATEGORIA: pagina([artigo("A", "a/index.html", "1.00", "One")], proxima="page-2.html"),
-            URL_CATEGORIA.replace("index.html", "page-2.html"):
-                pagina([artigo("B", "b/index.html", "2.00", "Two")], proxima="page-3.html"),
-            URL_CATEGORIA.replace("index.html", "page-3.html"):
-                pagina([artigo("C", "c/index.html", "3.00", "Five")]),
+        self.pages = {
+            CATEGORY_URL: page([article("A", "a/index.html", "1.00", "One")], next_page="page-2.html"),
+            CATEGORY_URL.replace("index.html", "page-2.html"):
+                page([article("B", "b/index.html", "2.00", "Two")], next_page="page-3.html"),
+            CATEGORY_URL.replace("index.html", "page-3.html"):
+                page([article("C", "c/index.html", "3.00", "Five")]),
         }
 
-    def raspar(self, max_paginas):
-        with mock.patch.object(scraper, "obter_pagina", side_effect=self.paginas.get), \
-             mock.patch.object(scraper.time, "sleep") as dormir, \
+    def scrape(self, max_pages):
+        with mock.patch.object(scraper, "get_page", side_effect=self.pages.get), \
+             mock.patch.object(scraper.time, "sleep") as sleep, \
              redirect_stdout(StringIO()):
-            livros = scraper.raspar_categoria(URL_CATEGORIA, "Travel", max_paginas=max_paginas, delay=1)
-        return livros, dormir
+            books = scraper.scrape_category(CATEGORY_URL, "Travel", max_pages=max_pages, delay=1)
+        return books, sleep
 
-    def test_segue_todas_as_paginas(self):
-        livros, dormir = self.raspar(max_paginas=10)
-        self.assertEqual([l.titulo for l in livros], ["A", "B", "C"])
-        self.assertEqual(dormir.call_count, 2)  # espera entre as páginas, não depois da última
+    def test_follows_all_pages(self):
+        books, sleep = self.scrape(max_pages=10)
+        self.assertEqual([b.title for b in books], ["A", "B", "C"])
+        self.assertEqual(sleep.call_count, 2)  # waits between pages, not after the last one
 
-    def test_respeita_limite_de_paginas(self):
-        livros, dormir = self.raspar(max_paginas=2)
-        self.assertEqual([l.titulo for l in livros], ["A", "B"])
-        self.assertEqual(dormir.call_count, 1)
+    def test_respects_page_limit(self):
+        books, sleep = self.scrape(max_pages=2)
+        self.assertEqual([b.title for b in books], ["A", "B"])
+        self.assertEqual(sleep.call_count, 1)
 
-    def test_para_quando_a_pagina_falha(self):
-        with mock.patch.object(scraper, "obter_pagina", return_value=None), redirect_stdout(StringIO()):
-            self.assertEqual(scraper.raspar_categoria(URL_CATEGORIA, "Travel"), [])
+    def test_stops_when_page_fails(self):
+        with mock.patch.object(scraper, "get_page", return_value=None), redirect_stdout(StringIO()):
+            self.assertEqual(scraper.scrape_category(CATEGORY_URL, "Travel"), [])
 
 
-class TestExportacao(unittest.TestCase):
+class TestExport(unittest.TestCase):
     def setUp(self):
-        self.pasta = tempfile.TemporaryDirectory()
-        self.livros = [
-            Livro("A", 10.0, 5, True, "Travel", "https://x/a"),
-            Livro("B", 20.0, 3, False, "Poetry", "https://x/b"),
-            Livro("A de novo", 10.0, 5, True, "Travel", "https://x/a"),
+        self.folder = tempfile.TemporaryDirectory()
+        self.books = [
+            Book("A", 10.0, 5, True, "Travel", "https://x/a"),
+            Book("B", 20.0, 3, False, "Poetry", "https://x/b"),
+            Book("A again", 10.0, 5, True, "Travel", "https://x/a"),
         ]
 
     def tearDown(self):
-        self.pasta.cleanup()
+        self.folder.cleanup()
 
-    def test_remove_duplicados_por_url(self):
-        self.assertEqual([l.titulo for l in remover_duplicados(self.livros)], ["A", "B"])
+    def test_removes_duplicates_by_url(self):
+        self.assertEqual([b.title for b in remove_duplicates(self.books)], ["A", "B"])
 
     def test_csv(self):
-        caminho = os.path.join(self.pasta.name, "sub", "livros.csv")
-        exportar_csv(self.livros[:2], caminho)
-        with open(caminho, "rb") as f:
-            self.assertTrue(f.read().startswith(b"\xef\xbb\xbf"))  # BOM pro Excel
-        with open(caminho, encoding="utf-8-sig") as f:
-            linhas = list(csv.DictReader(f))
-        self.assertEqual(linhas[1]["titulo"], "B")
-        self.assertEqual(linhas[1]["disponivel"], "False")
+        path = os.path.join(self.folder.name, "sub", "books.csv")
+        export_csv(self.books[:2], path)
+        with open(path, "rb") as f:
+            self.assertTrue(f.read().startswith(b"\xef\xbb\xbf"))  # BOM for Excel
+        with open(path, encoding="utf-8-sig") as f:
+            rows = list(csv.DictReader(f))
+        self.assertEqual(rows[1]["title"], "B")
+        self.assertEqual(rows[1]["available"], "False")
 
     def test_json(self):
-        caminho = os.path.join(self.pasta.name, "livros.json")
-        exportar_json(self.livros[:2], caminho)
-        with open(caminho, encoding="utf-8") as f:
-            self.assertEqual(json.load(f)[0]["preco"], 10.0)
+        path = os.path.join(self.folder.name, "books.json")
+        export_json(self.books[:2], path)
+        with open(path, encoding="utf-8") as f:
+            self.assertEqual(json.load(f)[0]["price"], 10.0)
 
-    def test_relatorio(self):
-        saida = StringIO()
-        with redirect_stdout(saida):
-            imprimir_relatorio(self.livros[:2])
-            imprimir_relatorio([])
-        texto = saida.getvalue()
-        self.assertIn("Total de livros: 2", texto)
-        self.assertIn("Preço médio:     £15.00", texto)
-        self.assertIn("Nenhum livro coletado", texto)
+    def test_report(self):
+        output = StringIO()
+        with redirect_stdout(output):
+            print_report(self.books[:2])
+            print_report([])
+        text = output.getvalue()
+        self.assertIn("Total books:     2", text)
+        self.assertIn("Average price:   £15.00", text)
+        self.assertIn("No books scraped", text)
 
 
 if __name__ == "__main__":

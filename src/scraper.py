@@ -1,4 +1,4 @@
-"""Coleta de livros do books.toscrape.com (site feito pra treinar scraping)."""
+"""Scrapes books from books.toscrape.com (a site made for practicing scraping)."""
 
 import time
 import re
@@ -13,144 +13,144 @@ from urllib3.util.retry import Retry
 
 BASE_URL = "https://books.toscrape.com/"
 
-# o site usa a nota em inglês na classe CSS (star-rating Three)
-ESTRELAS = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
+# the site puts the rating as a word in the CSS class (star-rating Three)
+STARS = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; PortfolioScraper/1.0)"}
 
 
-def criar_sessao(tentativas: int = 3) -> requests.Session:
-    """Sessão que tenta de novo em erro 429/5xx, esperando 0.5s, 1s, 2s..."""
-    sessao = requests.Session()
-    sessao.headers.update(HEADERS)
+def create_session(retries: int = 3) -> requests.Session:
+    """Session that retries on 429/5xx errors, waiting 0.5s, 1s, 2s..."""
+    session = requests.Session()
+    session.headers.update(HEADERS)
     retry = Retry(
-        total=tentativas,
+        total=retries,
         backoff_factor=0.5,
         status_forcelist=(429, 500, 502, 503, 504),
         allowed_methods=("GET",),
     )
-    sessao.mount("http://", HTTPAdapter(max_retries=retry))
-    sessao.mount("https://", HTTPAdapter(max_retries=retry))
-    return sessao
+    session.mount("http://", HTTPAdapter(max_retries=retry))
+    session.mount("https://", HTTPAdapter(max_retries=retry))
+    return session
 
 
-_sessao: Optional[requests.Session] = None
+_session: Optional[requests.Session] = None
 
 
-def _obter_sessao() -> requests.Session:
-    global _sessao
-    if _sessao is None:
-        _sessao = criar_sessao()
-    return _sessao
+def _get_session() -> requests.Session:
+    global _session
+    if _session is None:
+        _session = create_session()
+    return _session
 
 
 @dataclass
-class Livro:
-    titulo: str
-    preco: float
-    avaliacao: int  # 1 a 5
-    disponivel: bool
-    categoria: str
+class Book:
+    title: str
+    price: float
+    rating: int  # 1 to 5
+    available: bool
+    category: str
     url: str
 
 
-def obter_pagina(url: str) -> Optional[BeautifulSoup]:
-    """Baixa a página e devolve o HTML parseado, ou None se der erro."""
+def get_page(url: str) -> Optional[BeautifulSoup]:
+    """Downloads the page and returns the parsed HTML, or None if something goes wrong."""
     try:
-        resposta = _obter_sessao().get(url, timeout=10)
-        resposta.raise_for_status()
-        resposta.encoding = "utf-8"  # sem isso o £ vem quebrado
-        return BeautifulSoup(resposta.text, "html.parser")
+        response = _get_session().get(url, timeout=10)
+        response.raise_for_status()
+        response.encoding = "utf-8"  # without this the £ comes out broken
+        return BeautifulSoup(response.text, "html.parser")
     except requests.exceptions.ConnectionError:
-        print(f"  Erro de conexão ao acessar: {url}")
+        print(f"  Connection error while accessing: {url}")
     except requests.exceptions.Timeout:
-        print(f"  Timeout ao acessar: {url}")
+        print(f"  Timeout while accessing: {url}")
     except requests.exceptions.HTTPError as e:
-        print(f"  Erro HTTP {e.response.status_code}: {url}")
+        print(f"  HTTP error {e.response.status_code}: {url}")
     except requests.exceptions.RequestException as e:
-        print(f"  Falha na requisição ({e.__class__.__name__}): {url}")
+        print(f"  Request failed ({e.__class__.__name__}): {url}")
     return None
 
 
-def extrair_livros_da_pagina(soup: BeautifulSoup, categoria: str, url_pagina: str) -> list[Livro]:
-    livros = []
+def extract_books_from_page(soup: BeautifulSoup, category: str, page_url: str) -> list[Book]:
+    books = []
 
-    for artigo in soup.find_all("article", class_="product_pod"):
+    for article in soup.find_all("article", class_="product_pod"):
         try:
-            # o texto do link vem cortado, o título completo fica no atributo title
-            titulo = artigo.h3.a["title"]
-            url = urljoin(url_pagina, artigo.h3.a["href"])
+            # the link text gets cut off, the full title is in the title attribute
+            title = article.h3.a["title"]
+            url = urljoin(page_url, article.h3.a["href"])
 
-            preco_texto = artigo.find("p", class_="price_color").text
-            preco = float(re.sub(r"[^\d.]", "", preco_texto))
+            price_text = article.find("p", class_="price_color").text
+            price = float(re.sub(r"[^\d.]", "", price_text))
 
-            classes = artigo.find("p", class_="star-rating")["class"]
-            palavra = next((c for c in classes if c in ESTRELAS), None)
-            avaliacao = ESTRELAS.get(palavra, 0)
+            classes = article.find("p", class_="star-rating")["class"]
+            word = next((c for c in classes if c in STARS), None)
+            rating = STARS.get(word, 0)
 
-            disponivel = "In stock" in artigo.find("p", class_="instock").text
+            available = "In stock" in article.find("p", class_="instock").text
 
-            livros.append(Livro(titulo, preco, avaliacao, disponivel, categoria, url))
+            books.append(Book(title, price, rating, available, category, url))
         except (AttributeError, KeyError, TypeError, ValueError) as e:
-            print(f"  Aviso: não foi possível extrair um livro ({e})")
+            print(f"  Warning: couldn't extract a book ({e})")
 
-    return livros
+    return books
 
 
-def raspar_categoria(url_categoria: str, nome_categoria: str,
-                     max_paginas: int = 5, delay: float = 1.0) -> list[Livro]:
-    """Percorre as páginas da categoria seguindo o botão "next"."""
-    todos_livros = []
-    url_atual = url_categoria
-    pagina = 1
+def scrape_category(category_url: str, category_name: str,
+                    max_pages: int = 5, delay: float = 1.0) -> list[Book]:
+    """Goes through the category pages following the "next" button."""
+    all_books = []
+    current_url = category_url
+    page = 1
 
-    print(f"\nColetando categoria: {nome_categoria}")
+    print(f"\nScraping category: {category_name}")
 
-    while url_atual and pagina <= max_paginas:
-        print(f"  Página {pagina}: {url_atual}")
+    while current_url and page <= max_pages:
+        print(f"  Page {page}: {current_url}")
 
-        soup = obter_pagina(url_atual)
+        soup = get_page(current_url)
         if soup is None:
             break
 
-        livros_pagina = extrair_livros_da_pagina(soup, nome_categoria, url_atual)
-        todos_livros.extend(livros_pagina)
-        print(f"    {len(livros_pagina)} livros nesta página")
+        page_books = extract_books_from_page(soup, category_name, current_url)
+        all_books.extend(page_books)
+        print(f"    {len(page_books)} books on this page")
 
-        proximo = soup.find("li", class_="next")
-        if proximo and proximo.a and pagina < max_paginas:
-            url_atual = urljoin(url_atual, proximo.a["href"])
-            pagina += 1
-            time.sleep(delay)  # pra não sobrecarregar o site
+        next_link = soup.find("li", class_="next")
+        if next_link and next_link.a and page < max_pages:
+            current_url = urljoin(current_url, next_link.a["href"])
+            page += 1
+            time.sleep(delay)  # so we don't overload the site
         else:
             break
 
-    print(f"  Total coletado: {len(todos_livros)} livros")
-    return todos_livros
+    print(f"  Total scraped: {len(all_books)} books")
+    return all_books
 
 
-def obter_categorias(max_categorias: int = 5, nomes: Optional[list[str]] = None) -> list[tuple[str, str]]:
-    soup = obter_pagina(BASE_URL)
+def get_categories(max_categories: int = 5, names: Optional[list[str]] = None) -> list[tuple[str, str]]:
+    soup = get_page(BASE_URL)
     if soup is None:
         return []
-    return extrair_categorias(soup, max_categorias, nomes)
+    return extract_categories(soup, max_categories, names)
 
 
-def extrair_categorias(soup: BeautifulSoup, max_categorias: int = 5,
-                       nomes: Optional[list[str]] = None) -> list[tuple[str, str]]:
-    """Lê o menu lateral e devolve [(nome, url), ...].
+def extract_categories(soup: BeautifulSoup, max_categories: int = 5,
+                       names: Optional[list[str]] = None) -> list[tuple[str, str]]:
+    """Reads the side menu and returns [(name, url), ...].
 
-    Com `nomes`, devolve só essas categorias (sem diferenciar maiúscula), na ordem pedida.
-    Sem `nomes`, devolve as `max_categorias` primeiras.
+    With `names`, returns only those categories (case insensitive), in the order asked.
+    Without `names`, returns the first `max_categories`.
     """
     nav = soup.find("ul", class_="nav-list")
     if not nav:
         return []
 
-    # o primeiro link é "Books", que tem tudo
-    todas = [(link.text.strip(), urljoin(BASE_URL, link["href"])) for link in nav.find_all("a")[1:]]
-    if not nomes:
-        return todas[:max_categorias]
+    # the first link is "Books", which has everything
+    everything = [(link.text.strip(), urljoin(BASE_URL, link["href"])) for link in nav.find_all("a")[1:]]
+    if not names:
+        return everything[:max_categories]
 
-    por_nome = {nome.lower(): (nome, url) for nome, url in todas}
-    return [por_nome[n.strip().lower()] for n in nomes if n.strip().lower() in por_nome]
+    by_name = {name.lower(): (name, url) for name, url in everything}
+    return [by_name[n.strip().lower()] for n in names if n.strip().lower() in by_name]

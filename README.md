@@ -1,66 +1,66 @@
-# Web Scraper de Livros
+# Book Web Scraper
 
-![Testes](https://github.com/ViniciuscLemos/webscraper-python/actions/workflows/testes.yml/badge.svg)
+![Tests](https://github.com/ViniciuscLemos/webscraper-python/actions/workflows/tests.yml/badge.svg)
 
-Scraper em Python que coleta livros do [books.toscrape.com](https://books.toscrape.com), um site feito justamente pra treinar scraping. Ele pega título, preço, avaliação, disponibilidade e categoria, salva os dados e mostra um resumo no final.
+A Python scraper that collects books from [books.toscrape.com](https://books.toscrape.com), a site made exactly for practicing scraping. It grabs the title, price, rating, availability and category, saves the data and shows a summary at the end.
 
-Usei requests e BeautifulSoup. Os dados podem ir pra um PostgreSQL ou só pra um arquivo CSV/JSON.
+I used requests and BeautifulSoup. The data can go to PostgreSQL or just to a CSV/JSON file.
 
-## Rodando
+## Running
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate        # no Linux/Mac: source .venv/bin/activate
+.venv\Scripts\activate        # on Linux/Mac: source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Sem banco de dados, salvando em CSV:
+Without a database, saving to CSV:
 
 ```bash
-python main.py --sem-banco
+python main.py --no-db
 ```
 
-Com PostgreSQL:
+With PostgreSQL:
 
 ```bash
 psql -U postgres -c "CREATE DATABASE scraper_db;"
-cp .env.example .env    # coloca a senha do seu Postgres
+cp .env.example .env    # put your Postgres password in it
 python main.py
 ```
 
-Algumas opções:
+Some options:
 
 ```bash
-python main.py --sem-banco --categorias 2 --paginas 1
-python main.py --sem-banco --categoria Poetry --categoria Travel
-python main.py --sem-banco --json output/livros.json
+python main.py --no-db --categories 2 --pages 1
+python main.py --no-db --category Poetry --category Travel
+python main.py --no-db --json output/books.json
 ```
 
-O `--categoria` usa o nome que aparece no menu do site (não precisa ligar pra maiúscula) e pode repetir. Sem ele, o scraper pega as primeiras categorias do menu.
+`--category` uses the name shown in the site's menu (case doesn't matter) and can be repeated. Without it, the scraper takes the first categories in the menu.
 
-O CSV sai com BOM, então dá pra abrir direto no Excel sem o £ virar caractere estranho.
+The CSV is saved with a BOM, so you can open it straight in Excel without the £ turning into a weird character.
 
-Por padrão ele espera 0.8s entre uma página e outra pra não sobrecarregar o site (dá pra mudar com `--delay`). Se uma requisição falhar, ele tenta de novo algumas vezes antes de desistir.
+By default it waits 0.8s between pages so it doesn't overload the site (you can change it with `--delay`). If a request fails, it retries a few times before giving up.
 
-## Exemplo de saída
+## Sample output
 
-Rodando `python main.py --sem-banco --categoria Poetry --categoria Travel --paginas 1`, o relatório do final fica assim:
+Running `python main.py --no-db --category Poetry --category Travel --pages 1`, the report at the end looks like this:
 
 ```
 ==================================================
-  RELATÓRIO DO ACERVO COLETADO
+  REPORT OF THE SCRAPED BOOKS
 ==================================================
-  Total de livros: 30
-  Preço médio:     £37.38
-  Mais barato:     £14.19
-  Mais caro:       £57.31
+  Total books:     30
+  Average price:   £37.38
+  Cheapest:        £14.19
+  Most expensive:  £57.31
 
-  Categoria                 Livros  Preço Médio
+  Category                   Books    Avg Price
   ---------------------------------------------
   Poetry                        19       £35.97
   Travel                        11       £39.79
 
-  Top 5 com 5 estrelas e mais baratos:
+  Top 5 cheapest with 5 stars:
   1. ★★★★★ £15.42 - The Collected Poems of W.B. Yeats (The C
   2. ★★★★★ £17.49 - Booked
   3. ★★★★★ £26.08 - 1,000 Places to See Before You Die
@@ -70,21 +70,21 @@ Rodando `python main.py --sem-banco --categoria Poetry --categoria Travel --pagi
 ==================================================
 ```
 
-## Testes
+## Tests
 
 ```bash
 python -m unittest discover -s tests
 ```
 
-Os testes usam um HTML salvo no próprio teste, então não acessam a internet.
+The tests use HTML written inside the test itself, so they don't hit the internet.
 
-## Arquivos
+## Files
 
 ```
-main.py             fluxo principal e opções de linha de comando
-src/scraper.py      requisições e leitura do HTML
-src/banco.py        parte do PostgreSQL
-src/exportar.py     CSV, JSON e o resumo
+main.py             main flow and command line options
+src/scraper.py      requests and HTML parsing
+src/database.py     the PostgreSQL part
+src/export.py       CSV, JSON and the summary
 ```
 
-Se for usar a ideia em outro site, dá uma olhada no `robots.txt` e nos termos de uso dele antes.
+If you want to use the idea on another site, take a look at its `robots.txt` and terms of use first.
