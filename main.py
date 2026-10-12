@@ -22,9 +22,11 @@ def read_args(argv=None) -> argparse.Namespace:
                         help="exports the books to a CSV file")
     parser.add_argument("--json", metavar="FILE",
                         help="exports the books to a JSON file")
+    parser.add_argument("--html", metavar="FILE",
+                        help="saves a gallery page with covers, prices and stars")
     args = parser.parse_args(argv)
 
-    if args.no_db and not (args.csv or args.json):
+    if args.no_db and not (args.csv or args.json or args.html):
         args.csv = "output/books.csv"
     if args.categories < 1 or args.pages < 1:
         parser.error("--categories and --pages must be greater than zero")
@@ -94,7 +96,7 @@ def main(argv=None) -> int:
         print(f"\n  Total scraped: {len(all_books)} books")
 
         print("\n[4/4] Saving the data...")
-        from src.export import export_csv, export_json, print_report, remove_duplicates
+        from src.export import export_csv, export_html, export_json, print_report, remove_duplicates
         all_books = remove_duplicates(all_books)
 
         if args.csv:
@@ -103,6 +105,9 @@ def main(argv=None) -> int:
         if args.json:
             export_json(all_books, args.json)
             print(f"      JSON saved to: {args.json}")
+        if args.html:
+            export_html(all_books, args.html)
+            print(f"      Gallery saved to: {args.html}")
 
         if conn is not None:
             from src.database import insert_books, generate_report

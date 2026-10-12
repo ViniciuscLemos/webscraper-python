@@ -18,13 +18,14 @@ from bs4 import BeautifulSoup
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src import scraper  # noqa: E402
-from src.export import export_csv, export_json, print_report, remove_duplicates, shorten  # noqa: E402
+from src.export import export_csv, export_html, export_json, print_report, remove_duplicates, shorten  # noqa: E402
 from src.scraper import Book  # noqa: E402
 
 
 def article(title, href, price, stars, stock="In stock"):
     return f"""
     <article class="product_pod">
+      <div class="image_container"><a href="{href}"><img src="../../../../media/cache/{title[:3]}.jpg" alt="{title}"></a></div>
       <p class="star-rating {stars}"></p>
       <h3><a href="{href}" title="{title}">{title[:10]}...</a></h3>
       <div class="product_price">
@@ -57,6 +58,7 @@ class TestExtraction(unittest.TestCase):
         self.assertEqual(book.category, "Poetry")
         # urljoin resolves the "../" from the current page
         self.assertEqual(book.url, "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html")
+        self.assertEqual(book.cover, "https://books.toscrape.com/media/cache/A L.jpg")
 
     def test_out_of_stock_and_unknown_rating(self):
         soup = page([article("X", "x/index.html", "10.00", "Zero", stock="Out of stock")])
@@ -169,6 +171,26 @@ class TestExport(unittest.TestCase):
         self.assertIn("Total books:     2", text)
         self.assertIn("Average price:   £15.00", text)
         self.assertIn("No books scraped", text)
+
+    def test_html_gallery(self):
+        path = os.path.join(self.folder.name, "gallery.html")
+        books = self.books[:2] + [Book("<b>Tags</b> & co", 5.5, 0, True, "Travel", "https://x/c")]
+        export_html(books, path)
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+        self.assertIn("3 books · 2 categories · £5.50 to £20.00", text)
+        self.assertIn("&lt;b&gt;Tags&lt;/b&gt; &amp; co", text)  # titles are escaped
+        self.assertIn('aria-label="5 of 5 stars">★★★★★', text)
+        self.assertIn('class="card out"', text)  # B is out of stock
+        self.assertIn("no cover", text)
+        # 5-star books first inside a category
+        self.assertLess(text.index(">A<"), text.index("Tags"))
+
+    def test_html_without_books(self):
+        path = os.path.join(self.folder.name, "empty.html")
+        export_html([], path)
+        with open(path, encoding="utf-8") as f:
+            self.assertIn("No books scraped.", f.read())
 
     def test_shorten(self):
         self.assertEqual(shorten("Booked"), "Booked")

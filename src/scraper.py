@@ -52,6 +52,7 @@ class Book:
     available: bool
     category: str
     url: str
+    cover: str = ""  # image URL, only used by the HTML gallery
 
 
 def get_page(url: str) -> Optional[BeautifulSoup]:
@@ -90,7 +91,11 @@ def extract_books_from_page(soup: BeautifulSoup, category: str, page_url: str) -
 
             available = "In stock" in article.find("p", class_="instock").text
 
-            books.append(Book(title, price, rating, available, category, url))
+            # a missing cover isn't a reason to lose the book
+            img = article.find("img")
+            cover = urljoin(page_url, img["src"]) if img and img.get("src") else ""
+
+            books.append(Book(title, price, rating, available, category, url, cover))
         except (AttributeError, KeyError, TypeError, ValueError) as e:
             print(f"  Warning: couldn't extract a book ({e})")
 
