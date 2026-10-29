@@ -65,6 +65,7 @@ def print_report(books: list[Book]) -> None:
     print(f"  Average price:   £{mean(prices):.2f}")
     print(f"  Cheapest:        £{min(prices):.2f}")
     print(f"  Most expensive:  £{max(prices):.2f}")
+    print(f"  In stock:        {sum(b.available for b in books)} of {len(books)}")
 
     by_category = defaultdict(list)
     for book in books:
