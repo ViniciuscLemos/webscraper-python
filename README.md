@@ -35,6 +35,7 @@ python main.py --no-db --categories 2 --pages 1
 python main.py --no-db --category Poetry --category Travel
 python main.py --no-db --json output/books.json
 python main.py --no-db --html output/gallery.html
+python main.py --no-db --max-price 20 --min-stars 4 --in-stock   # only cheap, well rated and available
 ```
 
 `--category` uses the name shown in the site's menu (case doesn't matter) and can be repeated. Without it, the scraper takes the first categories in the menu.
