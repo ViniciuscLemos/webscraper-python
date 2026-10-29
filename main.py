@@ -16,6 +16,12 @@ def read_args(argv=None) -> argparse.Namespace:
                         help="max pages per category (default: 3)")
     parser.add_argument("--delay", type=float, default=0.8,
                         help="seconds to wait between pages (default: 0.8)")
+    parser.add_argument("--max-price", type=float, metavar="POUNDS",
+                        help="only keeps books up to this price")
+    parser.add_argument("--min-stars", type=int, choices=range(1, 6), metavar="1-5",
+                        help="only keeps books with at least this many stars")
+    parser.add_argument("--in-stock", action="store_true",
+                        help="only keeps books that are in stock")
     parser.add_argument("--no-db", action="store_true",
                         help="doesn't use PostgreSQL; only exports the files")
     parser.add_argument("--csv", metavar="FILE",
@@ -96,8 +102,13 @@ def main(argv=None) -> int:
         print(f"\n  Total scraped: {len(all_books)} books")
 
         print("\n[4/4] Saving the data...")
-        from src.export import export_csv, export_html, export_json, print_report, remove_duplicates
+        from src.export import (export_csv, export_html, export_json, keep_matching, print_report,
+                                remove_duplicates)
         all_books = remove_duplicates(all_books)
+        if args.max_price is not None or args.min_stars or args.in_stock:
+            before = len(all_books)
+            all_books = keep_matching(all_books, args.max_price, args.min_stars, args.in_stock)
+            print(f"      {before - len(all_books)} book(s) left out by the filters, {len(all_books)} kept.")
 
         if args.csv:
             export_csv(all_books, args.csv)

@@ -18,7 +18,7 @@ from bs4 import BeautifulSoup
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src import scraper  # noqa: E402
-from src.export import export_csv, export_html, export_json, print_report, remove_duplicates, shorten  # noqa: E402
+from src.export import export_csv, export_html, export_json, keep_matching, print_report, remove_duplicates, shorten  # noqa: E402
 from src.scraper import Book  # noqa: E402
 
 
@@ -145,6 +145,14 @@ class TestExport(unittest.TestCase):
 
     def test_removes_duplicates_by_url(self):
         self.assertEqual([b.title for b in remove_duplicates(self.books)], ["A", "B"])
+
+    def test_keep_matching(self):
+        books = self.books[:2]
+        self.assertEqual([b.title for b in keep_matching(books, max_price=15)], ["A"])
+        self.assertEqual([b.title for b in keep_matching(books, min_stars=3)], ["A", "B"])
+        self.assertEqual([b.title for b in keep_matching(books, min_stars=4)], ["A"])
+        self.assertEqual([b.title for b in keep_matching(books, in_stock=True)], ["A"])
+        self.assertEqual(keep_matching(books, max_price=5), [])
 
     def test_csv(self):
         path = os.path.join(self.folder.name, "sub", "books.csv")

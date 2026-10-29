@@ -26,6 +26,14 @@ def remove_duplicates(books: list[Book]) -> list[Book]:
     return unique
 
 
+def keep_matching(books: list[Book], max_price: float | None = None, min_stars: int | None = None,
+                  in_stock: bool = False) -> list[Book]:
+    return [b for b in books
+            if (max_price is None or b.price <= max_price)
+            and (min_stars is None or b.rating >= min_stars)
+            and (not in_stock or b.available)]
+
+
 def export_csv(books: list[Book], path: str) -> None:
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     # utf-8-sig adds the BOM, otherwise Excel shows the £ broken
