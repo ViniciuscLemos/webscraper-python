@@ -36,11 +36,14 @@ python main.py --no-db --category Poetry --category Travel
 python main.py --no-db --json output/books.json
 python main.py --no-db --html output/gallery.html
 python main.py --no-db --max-price 20 --min-stars 4 --in-stock   # only cheap, well rated and available
+python main.py --no-db --category Poetry --title love            # only titles with "love" (case doesn't matter)
 ```
 
 `--category` uses the name shown in the site's menu (case doesn't matter) and can be repeated. Without it, the scraper takes the first categories in the menu.
 
 The CSV is saved with a BOM, so you can open it straight in Excel without the £ turning into a weird character.
+
+Without the database, the report at the end also shows how many books got each star rating, as little bars in the terminal.
 
 By default it waits 0.8s between pages so it doesn't overload the site (you can change it with `--delay`). If a request fails, it retries a few times before giving up.
 
