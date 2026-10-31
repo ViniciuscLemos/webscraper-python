@@ -22,6 +22,8 @@ def read_args(argv=None) -> argparse.Namespace:
                         help="only keeps books with at least this many stars")
     parser.add_argument("--in-stock", action="store_true",
                         help="only keeps books that are in stock")
+    parser.add_argument("--title", metavar="TEXT",
+                        help="only keeps books with this text in the title")
     parser.add_argument("--no-db", action="store_true",
                         help="doesn't use PostgreSQL; only exports the files")
     parser.add_argument("--csv", metavar="FILE",
@@ -105,9 +107,9 @@ def main(argv=None) -> int:
         from src.export import (export_csv, export_html, export_json, keep_matching, print_report,
                                 remove_duplicates)
         all_books = remove_duplicates(all_books)
-        if args.max_price is not None or args.min_stars or args.in_stock:
+        if args.max_price is not None or args.min_stars or args.in_stock or args.title:
             before = len(all_books)
-            all_books = keep_matching(all_books, args.max_price, args.min_stars, args.in_stock)
+            all_books = keep_matching(all_books, args.max_price, args.min_stars, args.in_stock, args.title)
             print(f"      {before - len(all_books)} book(s) left out by the filters, {len(all_books)} kept.")
 
         if args.csv:

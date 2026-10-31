@@ -154,6 +154,13 @@ class TestExport(unittest.TestCase):
         self.assertEqual([b.title for b in keep_matching(books, in_stock=True)], ["A"])
         self.assertEqual(keep_matching(books, max_price=5), [])
 
+    def test_keep_matching_by_title(self):
+        books = [Book("The Love Song", 10.0, 4, True, "Poetry", "https://x/1"),
+                 Book("Travel Notes", 12.0, 2, True, "Travel", "https://x/2")]
+        self.assertEqual([b.title for b in keep_matching(books, title="LOVE")], ["The Love Song"])
+        self.assertEqual(len(keep_matching(books, title="  ")), 2)
+        self.assertEqual(keep_matching(books, title="love", max_price=5), [])
+
     def test_csv(self):
         path = os.path.join(self.folder.name, "sub", "books.csv")
         export_csv(self.books[:2], path)
