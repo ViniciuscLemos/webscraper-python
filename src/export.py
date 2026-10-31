@@ -70,6 +70,14 @@ def print_report(books: list[Book]) -> None:
     print(f"  Most expensive:  £{max(prices):.2f}")
     print(f"  In stock:        {sum(b.available for b in books)} of {len(books)}")
 
+    # rating 0 means the scraper couldn't read the stars, so it stays out of the bars
+    stars = {n: sum(b.rating == n for b in books) for n in range(5, 0, -1)}
+    widest = max(stars.values()) or 1
+    print("\n  Stars:")
+    for n, count in stars.items():
+        bar = "█" * round(20 * count / widest)
+        print(f"  {'★' * n:>5} {count:>4} {bar}".rstrip())
+
     by_category = defaultdict(list)
     for book in books:
         by_category[book.category].append(book.price)

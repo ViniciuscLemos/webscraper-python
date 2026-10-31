@@ -186,6 +186,8 @@ class TestExport(unittest.TestCase):
         self.assertIn("Total books:     2", text)
         self.assertIn("Average price:   £15.00", text)
         self.assertIn("In stock:        1 of 2", text)
+        self.assertIn("★★★★★    1 " + "█" * 20, text)
+        self.assertIn("   ★★    0\n", text)
         self.assertIn("No books scraped", text)
 
     def test_html_gallery(self):
