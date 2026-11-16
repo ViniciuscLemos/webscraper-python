@@ -27,11 +27,13 @@ def remove_duplicates(books: list[Book]) -> list[Book]:
 
 
 def keep_matching(books: list[Book], max_price: float | None = None, min_stars: int | None = None,
-                  in_stock: bool = False, title: str | None = None) -> list[Book]:
+                  in_stock: bool = False, title: str | None = None,
+                  min_price: float | None = None) -> list[Book]:
     # casefold so "LOVE" also finds "Love" and the like
     word = title.strip().casefold() if title else None
     return [b for b in books
             if (max_price is None or b.price <= max_price)
+            and (min_price is None or b.price >= min_price)
             and (min_stars is None or b.rating >= min_stars)
             and (not in_stock or b.available)
             and (not word or word in b.title.casefold())]

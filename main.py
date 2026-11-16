@@ -16,6 +16,8 @@ def read_args(argv=None) -> argparse.Namespace:
                         help="max pages per category (default: 3)")
     parser.add_argument("--delay", type=float, default=0.8,
                         help="seconds to wait between pages (default: 0.8)")
+    parser.add_argument("--min-price", type=float, metavar="POUNDS",
+                        help="only keeps books from this price up")
     parser.add_argument("--max-price", type=float, metavar="POUNDS",
                         help="only keeps books up to this price")
     parser.add_argument("--min-stars", type=int, choices=range(1, 6), metavar="1-5",
@@ -43,6 +45,8 @@ def read_args(argv=None) -> argparse.Namespace:
         parser.error("--delay can't be negative")
     if args.max_price is not None and args.max_price < 0:
         parser.error("--max-price can't be negative")
+    if args.min_price is not None and args.max_price is not None and args.min_price > args.max_price:
+        parser.error("--min-price is above --max-price, no book would be left")
     return args
 
 
@@ -112,9 +116,11 @@ def main(argv=None) -> int:
         from src.export import (export_csv, export_html, export_json, keep_matching, print_report,
                                 remove_duplicates)
         all_books = remove_duplicates(all_books)
-        if args.max_price is not None or args.min_stars or args.in_stock or args.title:
+        if (args.max_price is not None or args.min_price is not None or args.min_stars
+                or args.in_stock or args.title):
             before = len(all_books)
-            all_books = keep_matching(all_books, args.max_price, args.min_stars, args.in_stock, args.title)
+            all_books = keep_matching(all_books, args.max_price, args.min_stars, args.in_stock, args.title,
+                                      min_price=args.min_price)
             print(f"      {before - len(all_books)} book(s) left out by the filters, {len(all_books)} kept.")
 
         if args.csv:

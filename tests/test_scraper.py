@@ -154,6 +154,8 @@ class TestExport(unittest.TestCase):
         self.assertEqual([b.title for b in keep_matching(books, min_stars=4)], ["A"])
         self.assertEqual([b.title for b in keep_matching(books, in_stock=True)], ["A"])
         self.assertEqual(keep_matching(books, max_price=5), [])
+        self.assertEqual([b.title for b in keep_matching(books, min_price=15)], ["B"])
+        self.assertEqual(keep_matching(books, min_price=15, max_price=15), [])
 
     def test_keep_matching_by_title(self):
         books = [Book("The Love Song", 10.0, 4, True, "Poetry", "https://x/1"),
@@ -229,6 +231,7 @@ class TestArgs(unittest.TestCase):
         self.assertIn("--delay can't be negative", self.refused("--delay", "-1"))
         self.assertIn("--max-price can't be negative", self.refused("--max-price", "-5"))
         self.assertIn("greater than zero", self.refused("--pages", "0"))
+        self.assertIn("above --max-price", self.refused("--min-price", "30", "--max-price", "10"))
 
     def test_zero_delay_is_fine(self):
         self.assertEqual(main.read_args(["--delay", "0"]).delay, 0)

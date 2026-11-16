@@ -36,6 +36,7 @@ python main.py --no-db --category Poetry --category Travel
 python main.py --no-db --json output/books.json
 python main.py --no-db --html output/gallery.html
 python main.py --no-db --max-price 20 --min-stars 4 --in-stock   # only cheap, well rated and available
+python main.py --no-db --min-price 40 --max-price 60             # a price range
 python main.py --no-db --category Poetry --title love            # only titles with "love" (case doesn't matter)
 ```
 
