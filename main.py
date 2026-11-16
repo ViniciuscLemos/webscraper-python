@@ -38,6 +38,11 @@ def read_args(argv=None) -> argparse.Namespace:
         args.csv = "output/books.csv"
     if args.categories < 1 or args.pages < 1:
         parser.error("--categories and --pages must be greater than zero")
+    # a negative delay used to get all the way to time.sleep and crash after the first page
+    if args.delay < 0:
+        parser.error("--delay can't be negative")
+    if args.max_price is not None and args.max_price < 0:
+        parser.error("--max-price can't be negative")
     return args
 
 

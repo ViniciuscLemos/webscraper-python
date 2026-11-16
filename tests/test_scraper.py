@@ -17,6 +17,7 @@ from bs4 import BeautifulSoup
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+import main  # noqa: E402
 from src import scraper  # noqa: E402
 from src.export import export_csv, export_html, export_json, keep_matching, print_report, remove_duplicates, shorten  # noqa: E402
 from src.scraper import Book  # noqa: E402
@@ -215,6 +216,22 @@ class TestExport(unittest.TestCase):
         long_title = "The Collected Poems of W.B. Yeats (The Collected Works)"
         self.assertLessEqual(len(shorten(long_title)), 40)
         self.assertTrue(shorten(long_title).endswith("…"))
+
+
+class TestArgs(unittest.TestCase):
+    def refused(self, *argv):
+        with redirect_stdout(StringIO()), mock.patch("sys.stderr", StringIO()) as err, \
+                self.assertRaises(SystemExit):
+            main.read_args(list(argv))
+        return err.getvalue()
+
+    def test_negative_numbers_are_refused_before_scraping(self):
+        self.assertIn("--delay can't be negative", self.refused("--delay", "-1"))
+        self.assertIn("--max-price can't be negative", self.refused("--max-price", "-5"))
+        self.assertIn("greater than zero", self.refused("--pages", "0"))
+
+    def test_zero_delay_is_fine(self):
+        self.assertEqual(main.read_args(["--delay", "0"]).delay, 0)
 
 
 if __name__ == "__main__":
