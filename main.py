@@ -3,7 +3,7 @@
 import argparse
 import sys
 
-from src.scraper import scrape_category, get_categories
+from src.scraper import closest_name, get_categories, scrape_category
 
 
 def read_args(argv=None) -> argparse.Namespace:
@@ -89,7 +89,12 @@ def main(argv=None) -> int:
             found = {name.lower() for name, _ in categories}
             missing = [n for n in args.category if n.strip().lower() not in found]
             if missing:
-                print(f"      Not found on the site: {', '.join(missing)}")
+                # one more request, only when something was typed wrong, to suggest the right name
+                available = [name for name, _ in get_categories(max_categories=1000)]
+                for name in missing:
+                    guess = closest_name(name, available)
+                    hint = f" (did you mean {guess}?)" if guess else ""
+                    print(f"      Not found on the site: {name}{hint}")
 
         if not categories:
             print("      Error: no categories to scrape.")

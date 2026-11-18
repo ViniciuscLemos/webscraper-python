@@ -100,6 +100,14 @@ class TestExtraction(unittest.TestCase):
         self.assertEqual([name for name, _ in categories], ["Poetry", "Mystery"])
 
 
+class TestClosestName(unittest.TestCase):
+    def test_suggests_the_category_meant(self):
+        names = ["Travel", "Mystery", "Poetry", "Science Fiction"]
+        self.assertEqual(scraper.closest_name("poetyr", names), "Poetry")
+        self.assertEqual(scraper.closest_name("science fction", names), "Science Fiction")
+        self.assertIsNone(scraper.closest_name("cooking", names))
+
+
 class TestPagination(unittest.TestCase):
     def setUp(self):
         self.pages = {

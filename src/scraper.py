@@ -1,5 +1,6 @@
 """Scrapes books from books.toscrape.com (a site made for practicing scraping)."""
 
+import difflib
 import time
 import re
 from dataclasses import dataclass
@@ -132,6 +133,13 @@ def scrape_category(category_url: str, category_name: str,
 
     print(f"  Total scraped: {len(all_books)} books")
     return all_books
+
+
+def closest_name(wanted: str, available: list[str]) -> Optional[str]:
+    """The category the user probably meant ("Poetyr" -> "Poetry"), or None if nothing is close."""
+    by_lower = {name.lower(): name for name in available}
+    match = difflib.get_close_matches(wanted.strip().lower(), list(by_lower), n=1, cutoff=0.7)
+    return by_lower[match[0]] if match else None
 
 
 def get_categories(max_categories: int = 5, names: Optional[list[str]] = None) -> list[tuple[str, str]]:

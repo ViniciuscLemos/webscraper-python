@@ -40,7 +40,7 @@ python main.py --no-db --min-price 40 --max-price 60             # a price range
 python main.py --no-db --category Poetry --title love            # only titles with "love" (case doesn't matter)
 ```
 
-`--category` uses the name shown in the site's menu (case doesn't matter) and can be repeated. Without it, the scraper takes the first categories in the menu.
+`--category` uses the name shown in the site's menu (case doesn't matter) and can be repeated. A name with a typo gets a suggestion (`Poetyr` -> did you mean Poetry?). Without it, the scraper takes the first categories in the menu.
 
 The CSV is saved with a BOM, so you can open it straight in Excel without the £ turning into a weird character.
 
