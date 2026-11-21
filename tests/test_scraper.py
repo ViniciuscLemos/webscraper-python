@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import main  # noqa: E402
 from src import scraper  # noqa: E402
-from src.export import export_csv, export_html, export_json, keep_matching, print_report, remove_duplicates, shorten  # noqa: E402
+from src.export import export_csv, export_html, export_json, keep_matching, print_report, remove_duplicates, shorten, sort_books  # noqa: E402
 from src.scraper import Book  # noqa: E402
 
 
@@ -164,6 +164,14 @@ class TestExport(unittest.TestCase):
         self.assertEqual(keep_matching(books, max_price=5), [])
         self.assertEqual([b.title for b in keep_matching(books, min_price=15)], ["B"])
         self.assertEqual(keep_matching(books, min_price=15, max_price=15), [])
+
+    def test_sort_books(self):
+        books = [Book("b", 20.0, 3, True, "X", "https://x/1"), Book("A", 10.0, 3, True, "X", "https://x/2"),
+                 Book("C", 30.0, 5, True, "X", "https://x/3")]
+        self.assertEqual([b.title for b in sort_books(books, "price")], ["A", "b", "C"])
+        self.assertEqual([b.title for b in sort_books(books, "stars")], ["C", "A", "b"])
+        self.assertEqual([b.title for b in sort_books(books, "title")], ["A", "b", "C"])
+        self.assertEqual([b.title for b in sort_books(books, None)], ["b", "A", "C"])
 
     def test_keep_matching_by_title(self):
         books = [Book("The Love Song", 10.0, 4, True, "Poetry", "https://x/1"),

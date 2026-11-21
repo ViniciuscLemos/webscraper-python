@@ -39,6 +39,19 @@ def keep_matching(books: list[Book], max_price: float | None = None, min_stars: 
             and (not word or word in b.title.casefold())]
 
 
+# how --sort orders the files: cheapest first, best rated first or by title
+SORTS = {
+    "price": lambda b: (b.price, b.title.casefold()),
+    "stars": lambda b: (-b.rating, b.price, b.title.casefold()),
+    "title": lambda b: b.title.casefold(),
+}
+
+
+def sort_books(books: list[Book], by: str | None) -> list[Book]:
+    """The books in the --sort order; without it, the order they were scraped in."""
+    return sorted(books, key=SORTS[by]) if by else list(books)
+
+
 def export_csv(books: list[Book], path: str) -> None:
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     # utf-8-sig adds the BOM, otherwise Excel shows the £ broken

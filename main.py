@@ -26,6 +26,8 @@ def read_args(argv=None) -> argparse.Namespace:
                         help="only keeps books that are in stock")
     parser.add_argument("--title", metavar="TEXT",
                         help="only keeps books with this text in the title")
+    parser.add_argument("--sort", choices=("price", "stars", "title"),
+                        help="order of the books in the CSV/JSON: cheapest, best rated or by title")
     parser.add_argument("--no-db", action="store_true",
                         help="doesn't use PostgreSQL; only exports the files")
     parser.add_argument("--csv", metavar="FILE",
@@ -119,7 +121,7 @@ def main(argv=None) -> int:
 
         print("\n[4/4] Saving the data...")
         from src.export import (export_csv, export_html, export_json, keep_matching, print_report,
-                                remove_duplicates)
+                                remove_duplicates, sort_books)
         all_books = remove_duplicates(all_books)
         if (args.max_price is not None or args.min_price is not None or args.min_stars
                 or args.in_stock or args.title):
@@ -127,6 +129,7 @@ def main(argv=None) -> int:
             all_books = keep_matching(all_books, args.max_price, args.min_stars, args.in_stock, args.title,
                                       min_price=args.min_price)
             print(f"      {before - len(all_books)} book(s) left out by the filters, {len(all_books)} kept.")
+        all_books = sort_books(all_books, args.sort)
 
         if args.csv:
             export_csv(all_books, args.csv)
